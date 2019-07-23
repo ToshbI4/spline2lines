@@ -8,12 +8,12 @@ start = time()
 root = Tk()#Создаем окно
 canv = Canvas(root, width=1400,height=750)#Создаем полотно для рисования
 canv.pack()
-canv.create_line(0,0,400,0,fill='blue',arrow=LAST)#Рисуем оси со стрелочками направления
-canv.create_line(0,0,0,400,fill='blue',arrow=LAST)
+canv.create_line(0, 0, 400, 0, fill='blue', arrow=LAST)#Рисуем оси со стрелочками направления
+canv.create_line(0, 0, 0, 400, fill='blue', arrow=LAST)
 
 
 # Загружаем файл, из которого будем доставать сплайны
-# dwg = ezdxf.readfile("C:\\Users\Anton\Desktop\MT.LAB\paseka\printer\ezspline3.dxf")
+#dwg = ezdxf.readfile("C:\\Users\Anton\Desktop\MT.LAB\paseka\printer\ezspline3.dxf")
 dwg = ezdxf.readfile("C:\\Users\Anton\Desktop\MT.LAB\paseka\printer\snow_wo_hatch&edge.dxf")
 
 # iterate over all entities in model space
@@ -46,15 +46,18 @@ def part(p):
 
     #Безье по 2 точкам
     #Рисуем множество точек для кривой Безье, изменяя параметр t
-    for j in range (2, count+1, 5):# Тут костыль для определенного количества ControlPoints
+    step = count // 4
+    first = count % 4
+    for j in range(first, count+1, step):# Тут костыль для определенного количества ControlPoints
         if j <= count:
-            if j == 2:
-                c = 2
+            if j == first:
+                c = first
             else:
-                c = 6
+                c = step + 1
             for t in range(0, 1000, 1):
                 t = t/1000
-                a = t**(c-1)
+                if (c-1 >= 0):
+                    a = t**(c-1)
                 if t == 0:
                     (x, y) = 0, 0
                 else:
@@ -64,18 +67,20 @@ def part(p):
                         y = y + ys[j-(c-k)] * a
                         a = a * k * (1 - t) / ((c - 1 - k + 1) * t)
                         k -= 1
-                canv.create_oval(u * x - u * 100 + 200, u * y + u * 100 + 400, u * x - u * 100 + 200+1, u * y + u * 100 + 400+1)
+                #canv.create_oval(u * x - u * 100 + 200, u * y + u * 100 + 400, u * x - u * 100 + 200+1, u * y + u * 100 + 400+1)
 
                 #Разбиваем сплайн на отрезки не больше заданной длины
-                if (sqrt((x-x1)**2 + (y-y1)**2) <= 2) :
+                if (sqrt((x-x1)**2 + (y-y1)**2) <= 0.5) :
                     (x2,y2) = (x, y)
-                elif (x1, y1) !=  (0, 0):
-                    canv.create_line(u*x1-u*100+200, u*y1+u*100+400, u*x2-u*100+200, u*y2+u*100+400)
-                    print(x1,y1)
+                else:
+                    if (x1,y1) != (0, 0):
+                        # Тут много коэффициентов для цетровки изображения. Нужен алгоритм для автоматического подбора коэффициентов
+                        canv.create_line(u*x1-u*100+200, u*y1+u*100+400, u*x2-u*100+200, u*y2+u*100+400)
+                    print(x1, y1)
                     x1, y1 = x, y
                 x, y = 0, 0
-for i in range (6,12):
-    part(i)
-for i in range (24,42):
-    part(i)
+
+for i in range(0, 42):
+    if elements[i].dxftype() == 'SPLINE':
+        part(i)
 root.mainloop()
